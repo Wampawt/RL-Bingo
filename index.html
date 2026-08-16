@@ -29,6 +29,7 @@
     body {
       display: flex;
       flex-direction: column;
+      /* Textured Stadium Turf & Carbon Mesh Overlay */
       background-image: 
         radial-gradient(circle at 20% 20%, rgba(59, 130, 246, 0.12) 0%, transparent 40%),
         radial-gradient(circle at 80% 80%, rgba(16, 185, 129, 0.12) 0%, transparent 40%),
@@ -40,25 +41,25 @@
       background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0;
     }
 
-    /* Fullscreen / Focus Mode Adjustments */
-    body.focus-mode header,
-    body.focus-mode .legend,
-    body.focus-mode .sidebar {
+    /* Fullscreen Mode Adjustments */
+    body.fullscreen-mode header,
+    body.fullscreen-mode .legend,
+    body.fullscreen-mode .sidebar {
       display: none !important;
     }
 
-    body.focus-mode .board-container {
+    body.fullscreen-mode .board-container {
       padding: 0;
       height: 100vh;
       width: 100vw;
     }
 
-    body.focus-mode .bingo-board {
+    body.fullscreen-mode .bingo-board {
       width: min(96vw, 96vh);
       height: min(96vw, 96vh);
     }
 
-    .btn-exit-focus {
+    .btn-exit-fullscreen {
       position: fixed;
       top: 15px;
       right: 15px;
@@ -75,7 +76,7 @@
       display: none;
     }
 
-    body.focus-mode .btn-exit-focus {
+    body.fullscreen-mode .btn-exit-fullscreen {
       display: inline-flex;
     }
 
@@ -153,13 +154,13 @@
     }
 
     .title-group p { font-size: 0.75rem; color: var(--text-muted); }
-    .controls { display: flex; align-items: center; gap: 0.5rem; }
+    .controls { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
 
     select, button {
       background: var(--bg-card);
       color: var(--text-main);
       border: 1px solid var(--border-color);
-      padding: 0.45rem 0.75rem;
+      padding: 0.45rem 0.7rem;
       border-radius: 8px;
       font-size: 0.8rem;
       font-weight: 600;
@@ -167,7 +168,7 @@
       transition: all 0.2s ease;
       display: inline-flex;
       align-items: center;
-      gap: 0.4rem;
+      gap: 0.35rem;
     }
 
     select:hover, button:hover { background: var(--bg-card-hover); border-color: #334155; }
@@ -179,6 +180,8 @@
     button.btn-warning:hover { background: #b45309; }
     button.btn-purple { background: #7c3aed; border-color: #a855f7; }
     button.btn-purple:hover { background: #6d28d9; }
+    button.btn-cyan { background: #0284c7; border-color: #38bdf8; }
+    button.btn-cyan:hover { background: #0369a1; }
 
     /* Legend Bar */
     .legend {
@@ -343,6 +346,48 @@
     .grid-6 .field-text { font-size: calc(0.55rem + 0.3vw); }
     .grid-7 .field-text { font-size: calc(0.48rem + 0.22vw); }
 
+    /* Pin / Favorite Button (Top Left) */
+    .pin-btn {
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: #94a3b8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.2s ease, transform 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+      cursor: pointer;
+      z-index: 5;
+      padding: 0;
+    }
+
+    .bingo-field:hover .pin-btn,
+    .bingo-field.pinned .pin-btn {
+      opacity: 1;
+    }
+
+    .pin-btn:hover {
+      transform: scale(1.15);
+      color: #f59e0b;
+      border-color: #f59e0b;
+    }
+
+    .bingo-field.pinned .pin-btn {
+      color: #f59e0b;
+      border-color: #f59e0b;
+      background: rgba(0, 0, 0, 0.95);
+      box-shadow: 0 0 8px rgba(245, 158, 11, 0.6);
+    }
+
+    .pin-btn svg { width: 11px; height: 11px; fill: currentColor; }
+
+    /* Reroll Button (Top Right) */
     .reroll-btn {
       position: absolute;
       top: 4px;
@@ -470,7 +515,7 @@
 </head>
 <body>
 
-  <button id="btnExitFocus" class="btn-exit-focus">❌ Exit Focus Mode</button>
+  <button id="btnExitFocus" class="btn-exit-fullscreen">❌ Exit Fullscreen</button>
 
   <header>
     <div class="title-group">
@@ -490,9 +535,10 @@
       </select>
 
       <button id="btnRandomize" class="btn-primary">⚡ Randomize</button>
+      <button id="btnSort" class="btn-cyan">🧩 Sort Symmetrical</button>
       <button id="btnDefault" class="btn-warning">⏮ Default 5x5</button>
       <button id="btnShuffle">🔀 Shuffle</button>
-      <button id="btnFocus" class="btn-purple">📺 Focus Mode</button>
+      <button id="btnFocus" class="btn-purple">📺 Fullscreen</button>
       <button id="btnSave" class="btn-primary">💾 Save</button>
       <button id="btnResetMarks" class="btn-success">🔄 Clear Marks</button>
     </div>
@@ -559,100 +605,102 @@
 
   <script>
     const defaultImageLayout = [
-      { text: "Kenan passes into the enemy\n(must end in goal)", family: "pass_enemy", category: "kenan", marked: false },
-      { text: "Natan (air) dribble bump", family: "dribble_bump", category: "natan", marked: false },
-      { text: "Team Passing Play\n(requires at least a pass and a pass back)", family: "team_pass", category: "team", marked: false },
-      { text: "Kenan owngoal", family: "owngoal", category: "kenan", marked: false },
-      { text: "Natan redirects in goal", family: "redirect", category: "natan", marked: false },
+      { text: "Kenan passes into the enemy\n(must end in goal)", family: "pass_enemy", category: "kenan", marked: false, pinned: false },
+      { text: "Natan (air) dribble bump", family: "dribble_bump", category: "natan", marked: false, pinned: false },
+      { text: "Team Passing Play\n(requires at least a pass and a pass back)", family: "team_pass", category: "team", marked: false, pinned: false },
+      { text: "Kenan owngoal", family: "owngoal", category: "kenan", marked: false, pinned: false },
+      { text: "Natan redirects in goal", family: "redirect", category: "natan", marked: false, pinned: false },
       
-      { text: "Natan Double Tap", family: "double_tap", category: "natan", marked: false },
-      { text: "Rule 1", family: "rule1", category: "global", marked: false },
-      { text: "Kenan misspells HARD in chat", family: "misspell", category: "kenan", marked: false },
-      { text: "Opponent whiffs open net", family: "opp_whiff", category: "opponents", marked: false },
-      { text: "Kenan whiffs an open net", family: "open_net_whiff", category: "kenan", marked: false },
+      { text: "Natan Double Tap", family: "double_tap", category: "natan", marked: false, pinned: false },
+      { text: "Rule 1", family: "rule1", category: "global", marked: false, pinned: false },
+      { text: "Kenan misspells HARD in chat", family: "misspell", category: "kenan", marked: false, pinned: false },
+      { text: "Opponent whiffs open net", family: "opp_whiff", category: "opponents", marked: false, pinned: false },
+      { text: "Kenan whiffs an open net", family: "open_net_whiff", category: "kenan", marked: false, pinned: false },
       
-      { text: "Backflip whiff a save", family: "backflip_save", category: "global", marked: false },
-      { text: "Kenan fakes opponent", family: "fake", category: "kenan", marked: false },
-      { text: "FREE", family: "free", category: "free", marked: true },
-      { text: "Natan whiffs a flick entirely", family: "flick_whiff", category: "natan", marked: false },
-      { text: "Team Pinch\n(must go in)", family: "team_pinch", category: "team", marked: false },
+      { text: "Backflip whiff a save", family: "backflip_save", category: "global", marked: false, pinned: false },
+      { text: "Kenan fakes opponent", family: "fake", category: "kenan", marked: false, pinned: false },
+      { text: "FREE", family: "free", category: "free", marked: true, pinned: false },
+      { text: "Natan whiffs a flick entirely", family: "flick_whiff", category: "natan", marked: false, pinned: false },
+      { text: "Team Pinch\n(must go in)", family: "team_pinch", category: "team", marked: false, pinned: false },
       
-      { text: "Natan whiffs an open net", family: "open_net_whiff", category: "natan", marked: false },
-      { text: "Opponent owngoals", family: "opp_owngoal", category: "opponents", marked: false },
-      { text: "Natan misses on kickoff", family: "kickoff_miss", category: "natan", marked: false },
-      { text: "Opponents bump each other away from a save", family: "opp_bump_save", category: "opponents", marked: false },
-      { text: "Kenan Double Tap", family: "double_tap", category: "kenan", marked: false },
+      { text: "Natan whiffs an open net", family: "open_net_whiff", category: "natan", marked: false, pinned: false },
+      { text: "Opponent owngoals", family: "opp_owngoal", category: "opponents", marked: false, pinned: false },
+      { text: "Natan misses on kickoff", family: "kickoff_miss", category: "natan", marked: false, pinned: false },
+      { text: "Opponents bump each other away from a save", family: "opp_bump_save", category: "opponents", marked: false, pinned: false },
+      { text: "Kenan Double Tap", family: "double_tap", category: "kenan", marked: false, pinned: false },
       
-      { text: "Kenan demoes for Natans goal", family: "demo_goal", category: "team", marked: false },
-      { text: "Natan fakes opponent", family: "fake", category: "natan", marked: false },
-      { text: "Pool Goal / Bump Goal", family: "pool_goal", category: "global", marked: false },
-      { text: "Kenan 0 boost play into GOAL", family: "zero_boost", category: "kenan", marked: false },
-      { text: "Natan owngoal", family: "owngoal", category: "natan", marked: false }
+      { text: "Kenan demoes for Natans goal", family: "demo_goal", category: "team", marked: false, pinned: false },
+      { text: "Natan fakes opponent", family: "fake", category: "natan", marked: false, pinned: false },
+      { text: "Pool Goal / Bump Goal", family: "pool_goal", category: "global", marked: false, pinned: false },
+      { text: "Kenan 0 boost play into GOAL", family: "zero_boost", category: "kenan", marked: false, pinned: false },
+      { text: "Natan owngoal", family: "owngoal", category: "natan", marked: false, pinned: false }
     ];
 
+    // Perfectly Balanced Player Actions (30 Positive vs 30 Negative)
     const rawBoth = [
-      ["pass_enemy", "passes into the enemy (must end in goal)"],
+      // 30 POSITIVE / HYPED ACTIONS
       ["dribble_bump", "(air) dribble bump"],
-      ["owngoal", "owngoal accidentally"],
       ["redirect", "redirects in goal"],
       ["double_tap", "scores a Double Tap"],
-      ["misspell", "misspells HARD in chat"],
-      ["open_net_whiff", "whiffs an open net"],
-      ["flick_whiff", "whiffs a flick entirely"],
-      ["fake", "fakes opponent"],
-      ["kickoff_miss", "misses on kickoff"],
       ["zero_boost", "0 boost play into GOAL"],
-      ["steal_goal", "steals teammate's goal at 0.1s"],
       ["ceiling_shot", "scores a ceiling shot"],
       ["flip_reset", "scores a flip reset goal"],
       ["musty_flick", "scores a Musty flick goal"],
       ["pinch_goal", "scores a wall pinch goal"],
-      ["demo_spree", "gets 3 demos in one match"],
-      ["boost_steal", "steals all corner boost from teammate"],
-      ["pinch_save", "accidental team pinch save"],
       ["half_flip_save", "half flips into a save"],
       ["aerial_goal", "scores a high aerial goal"],
       ["hat_trick", "gets a Hat Trick Medal (3 goals in 1 match)"],
       ["savior", "gets a Savior Medal (3 saves in 1 match)"],
       ["playmaker", "gets a Playmaker Medal (3 assists in 1 match)"],
-      ["backflip_whiff", "backflip whiffs a save"],
-      ["dunked", "gets dunked on"],
       ["turtle_goal", "scores a turtle goal"],
       ["psycho_goal", "scores a psycho goal"],
-      ["bumps_mate", "bumps teammate out of position"],
       ["prejump_goal", "scores off a prejump"],
-      ["shadow_beat", "gets beat on a shadow defense"],
-      ["crossbar_double", "hits the crossbar twice in one game"],
-      ["demoed_thrice", "gets demoed 3 times in one game"],
-      ["pinch_accidental", "scores an accidental pinch goal"],
-      ["ot_miss", "misses an easy save in Overtime"],
       ["ground_pinch", "scores a ground pinch goal"],
-      ["jumps_over", "jumps over the ball on defense"],
       ["kickoff_direct", "scores a kickoff goal directly"],
-      ["misrotate", "misrotates and gets scored on"],
-      ["bumped_in_net", "gets bumped into the opponent net"],
-      ["low_boost_score", "scores with less than 10 boost"],
-      ["slow_roll_miss", "misses a slow rolling ball"],
-      ["goal_line_save", "gets a goal line save"],
-      ["double_commit_ko", "double commits on kickoff"],
-      ["wall_demo", "gets demoed on the wall"],
-      ["wavedash_goal", "scores off a wave dash"],
-      ["midair_demo", "gets demoed while in mid-air"],
-      ["corner_clear_miss", "misses a clear ball from corner"],
       ["dunk_goal", "scores a dunk goal"],
-      ["wall_jump_miss", "jumps off wall and misses ball"],
-      ["dribble_beat", "dribbles past an opponent"],
       ["upside_down_score", "scores with an upside-down car"],
-      ["opponent_save_bump", "accidentally bumps opponent into saving"],
-      ["enemy_assist", "gets credited with assist on enemy goal"],
-      ["aerial_pinch", "aerial pinch attempt that hits backboard"],
       ["pogo_goal", "scores off a pogo bounce"],
       ["speedflip_goal", "scores directly off kickoff speedflip"],
-      ["boost_over_ball", "loves boost over ball (corner full boost instead of save)"],
       ["backboard_double", "scores a backboard double tap"],
       ["wall_pinch_goal", "scores off a wall pinch"],
       ["zero_sec_clutch", "saves a goal-line 0-second shot"],
-      ["5050_win", "wins a 50/50 that goes straight into goal"]
+      ["5050_win", "wins a 50/50 that goes straight into goal"],
+      ["dribble_beat", "dribbles past an opponent"],
+      ["goal_line_save", "gets a goal line save"],
+      ["pinch_save", "accidental team pinch save"],
+      ["demo_spree", "gets 3 demos in one match"],
+
+      // 30 NEGATIVE / WHIFF ACTIONS
+      ["pass_enemy", "passes into the enemy (must end in goal)"],
+      ["owngoal", "owngoal accidentally"],
+      ["misspell", "misspells HARD in chat"],
+      ["open_net_whiff", "whiffs an open net"],
+      ["flick_whiff", "whiffs a flick entirely"],
+      ["kickoff_miss", "misses on kickoff"],
+      ["steal_goal", "steals teammate's goal at 0.1s"],
+      ["pinch_attempt", "attempts a wall pinch and whiffs"],
+      ["demo_whiff", "tries to demo and misses completely"],
+      ["boost_steal", "steals all corner boost from teammate"],
+      ["half_flip_fail", "messes up a half flip"],
+      ["aerial_whiff", "whiffs a high aerial"],
+      ["backflip_whiff", "backflip whiffs a save"],
+      ["dunked", "gets dunked on"],
+      ["bumps_mate", "bumps teammate out of position"],
+      ["prejump_fail", "prejumps and misses by a mile"],
+      ["shadow_beat", "gets beat on a shadow defense"],
+      ["crossbar_double", "hits the crossbar twice in one game"],
+      ["demoed_thrice", "gets demoed 3 times in one game"],
+      ["ot_miss", "misses an easy save in Overtime"],
+      ["jumps_over", "jumps over the ball on defense"],
+      ["misrotate", "misrotates and gets scored on"],
+      ["bumped_in_net", "gets bumped into the opponent net"],
+      ["slow_roll_miss", "misses a slow rolling ball"],
+      ["double_commit_ko", "double commits on kickoff"],
+      ["wall_drive_fall", "drives up the wall and falls off"],
+      ["wavedash_trip", "tries a wave dash and trips car"],
+      ["midair_demo", "gets demoed while in mid-air"],
+      ["corner_clear_miss", "misses a clear ball from corner"],
+      ["miss_full_boost", "misses full boost"]
     ];
 
     const rawTeam = [
@@ -742,17 +790,17 @@
     function expandMasterPool() {
       const pool = [];
       rawBoth.forEach(([fam, text]) => {
-        pool.push({ text: `Natan ${text}`, family: fam, category: "natan", marked: false });
-        pool.push({ text: `Kenan ${text}`, family: fam, category: "kenan", marked: false });
+        pool.push({ text: `Natan ${text}`, family: fam, category: "natan", marked: false, pinned: false });
+        pool.push({ text: `Kenan ${text}`, family: fam, category: "kenan", marked: false, pinned: false });
       });
       rawTeam.forEach(([fam, text]) => {
-        pool.push({ text: text, family: fam, category: "team", marked: false });
+        pool.push({ text: text, family: fam, category: "team", marked: false, pinned: false });
       });
       rawOpponents.forEach(([fam, text]) => {
-        pool.push({ text: text, family: fam, category: "opponents", marked: false });
+        pool.push({ text: text, family: fam, category: "opponents", marked: false, pinned: false });
       });
       rawGlobal.forEach(([fam, text]) => {
-        pool.push({ text: text, family: fam, category: "global", marked: false });
+        pool.push({ text: text, family: fam, category: "global", marked: false, pinned: false });
       });
       return pool;
     }
@@ -778,6 +826,7 @@
     const customText = document.getElementById('customText');
     const customCat = document.getElementById('customCat');
     const btnRandomize = document.getElementById('btnRandomize');
+    const btnSort = document.getElementById('btnSort');
     const btnDefault = document.getElementById('btnDefault');
     const btnShuffle = document.getElementById('btnShuffle');
     const btnFocus = document.getElementById('btnFocus');
@@ -834,7 +883,7 @@
         card.addEventListener('dragstart', (e) => {
           e.dataTransfer.setData('text/plain', JSON.stringify({
             source: 'sidebar',
-            prompt: { ...prompt, marked: false }
+            prompt: { ...prompt, marked: false, pinned: false }
           }));
         });
 
@@ -845,10 +894,25 @@
     function buildBoardArray(size) {
       const totalCells = size * size;
       const centerIdx = size % 2 !== 0 ? Math.floor(totalCells / 2) : -1;
-      const playableCount = centerIdx !== -1 ? totalCells - 1 : totalCells;
 
-      const baseQuota = Math.floor(playableCount / 5);
-      const remainder = playableCount % 5;
+      let newBoard = new Array(totalCells).fill(null);
+      let usedFamilies = new Set();
+
+      for (let i = 0; i < Math.min(boardPrompts.length, totalCells); i++) {
+        if (boardPrompts[i] && boardPrompts[i].pinned && !isCenterCell(i, size)) {
+          newBoard[i] = boardPrompts[i];
+          usedFamilies.add(boardPrompts[i].family);
+        }
+      }
+
+      const unpinnedNeeded = newBoard.filter((item, idx) => item === null && idx !== centerIdx).length;
+      if (unpinnedNeeded === 0) {
+        if (centerIdx !== -1) newBoard[centerIdx] = { text: "FREE", family: "free", category: "free", marked: true, pinned: false };
+        return newBoard;
+      }
+
+      const baseQuota = Math.floor(unpinnedNeeded / 5);
+      const remainder = unpinnedNeeded % 5;
 
       const categoryQuotas = {
         natan: baseQuota,
@@ -858,7 +922,6 @@
         global: baseQuota + remainder
       };
 
-      let usedFamilies = new Set();
       let selectedPrompts = [];
 
       for (const cat in categoryQuotas) {
@@ -872,7 +935,7 @@
           const randomIndex = Math.floor(Math.random() * catPool.length);
           const chosen = catPool.splice(randomIndex, 1)[0];
           usedFamilies.add(chosen.family);
-          selectedPrompts.push({ ...chosen, marked: false });
+          selectedPrompts.push({ ...chosen, marked: false, pinned: false });
         }
       }
 
@@ -881,16 +944,60 @@
         [selectedPrompts[i], selectedPrompts[j]] = [selectedPrompts[j], selectedPrompts[i]];
       }
 
-      let board = [];
       let pIdx = 0;
       for (let i = 0; i < totalCells; i++) {
         if (i === centerIdx) {
-          board.push({ text: "FREE", family: "free", category: "free", marked: true });
-        } else {
-          board.push(selectedPrompts[pIdx++]);
+          newBoard[i] = { text: "FREE", family: "free", category: "free", marked: true, pinned: false };
+        } else if (newBoard[i] === null) {
+          newBoard[i] = selectedPrompts[pIdx++];
         }
       }
-      return board;
+      return newBoard;
+    }
+
+    // PERFECT 4-WAY BALANCED SYMMETRICAL SORT ALGORITHM
+    // Uses the mathematical matrix stride (2*r + c) % 5 so every row, column, and diagonal gets an equal mix of all 5 categories
+    function sortBoardSymmetrically() {
+      const N = currentGridSize;
+      const centerIdx = N % 2 !== 0 ? Math.floor((N * N) / 2) : -1;
+      const catOrder = ['natan', 'kenan', 'team', 'opponents', 'global'];
+
+      let usedFamilies = new Set();
+      let newBoard = new Array(N * N).fill(null);
+
+      // Retain existing pinned tiles
+      for (let i = 0; i < boardPrompts.length; i++) {
+        if (boardPrompts[i] && boardPrompts[i].pinned && !isCenterCell(i, N)) {
+          newBoard[i] = boardPrompts[i];
+          usedFamilies.add(boardPrompts[i].family);
+        }
+      }
+
+      for (let r = 0; r < N; r++) {
+        for (let c = 0; c < N; c++) {
+          const idx = r * N + c;
+          if (isCenterCell(idx, N)) {
+            newBoard[idx] = { text: "FREE", family: "free", category: "free", marked: true, pinned: false };
+            continue;
+          }
+          if (newBoard[idx] !== null) continue;
+
+          const targetCat = catOrder[(2 * r + c) % catOrder.length];
+          let available = fullPromptPool.filter(p => p.category === targetCat && !usedFamilies.has(p.family));
+          if (available.length === 0) {
+            available = fullPromptPool.filter(p => p.category === targetCat);
+          }
+          const randomIndex = Math.floor(Math.random() * available.length);
+          const chosen = available[randomIndex] || { text: "Rule 1", family: "rule1", category: "global", marked: false, pinned: false };
+          usedFamilies.add(chosen.family);
+          newBoard[idx] = { ...chosen, marked: false, pinned: false };
+        }
+      }
+
+      boardPrompts = newBoard;
+      renderBoard();
+      checkBingos(true);
+      showToast('SYMMETRICAL BALANCED SORT APPLIED!');
     }
 
     function getNearBingoIndices() {
@@ -956,14 +1063,27 @@
         const field = document.createElement('div');
         field.className = `bingo-field cat-${cat}`;
         if (prompt.marked) field.classList.add('marked');
+        if (prompt.pinned) field.classList.add('pinned');
         if (!prompt.marked && nearBingoIndices.has(index)) field.classList.add('near-bingo');
         field.dataset.index = index;
 
-        const textSpan = document.createElement('span');
-        textSpan.className = 'field-text';
-        textSpan.innerText = prompt.text;
-        field.appendChild(textSpan);
+        // Pin / Favorite Icon (Top Left)
+        if (!isFreeCenter) {
+          const pinBtn = document.createElement('button');
+          pinBtn.className = 'pin-btn';
+          pinBtn.title = prompt.pinned ? 'Unpin Favorite' : 'Pin Favorite (Locks during reroll)';
+          pinBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5v6l1 1 1-1v-6h5v-2l-2-2z"/></svg>`;
+          
+          pinBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            prompt.pinned = !prompt.pinned;
+            renderBoard();
+            showToast(prompt.pinned ? 'Tile pinned as favorite!' : 'Tile unpinned!');
+          });
+          field.appendChild(pinBtn);
+        }
 
+        // Reroll Button (Top Right)
         if (!isFreeCenter) {
           const rerollBtn = document.createElement('button');
           rerollBtn.className = 'reroll-btn';
@@ -976,6 +1096,11 @@
           });
           field.appendChild(rerollBtn);
         }
+
+        const textSpan = document.createElement('span');
+        textSpan.className = 'field-text';
+        textSpan.innerText = prompt.text;
+        field.appendChild(textSpan);
 
         field.addEventListener('click', () => {
           if (isFreeCenter) return;
@@ -1014,7 +1139,7 @@
           if (data.prompt && data.prompt.category === 'free') return;
 
           if (data.source === 'sidebar') {
-            boardPrompts[index] = { ...data.prompt, marked: false };
+            boardPrompts[index] = { ...data.prompt, marked: false, pinned: false };
           } else if (data.source === 'board') {
             const targetIndex = index;
             const sourceIndex = data.index;
@@ -1160,8 +1285,13 @@
       }
     }
 
+    // Individual tile reroll (Respects Pinned status)
     function rerollField(index) {
       if (isCenterCell(index, currentGridSize) || boardPrompts[index].category === 'free') return;
+      if (boardPrompts[index].pinned) {
+        showToast('Tile is pinned/favorite!');
+        return;
+      }
 
       const targetCategory = boardPrompts[index].category;
       const currentFamilies = new Set(boardPrompts.map(p => p.family));
@@ -1175,11 +1305,12 @@
         ? available[Math.floor(Math.random() * available.length)]
         : fullPromptPool.filter(p => p.category !== 'free')[Math.floor(Math.random() * fullPromptPool.length)];
 
-      boardPrompts[index] = { ...newPrompt, marked: false };
+      boardPrompts[index] = { ...newPrompt, marked: false, pinned: false };
       renderBoard();
       checkBingos();
     }
 
+    // Shuffle Board (Allows shuffling pinned items to new positions)
     function shuffleBoard() {
       const centerIdx = currentGridSize % 2 !== 0 ? Math.floor((currentGridSize * currentGridSize) / 2) : -1;
       let eligibleIndices = [];
@@ -1266,7 +1397,8 @@
           text: text,
           family: `custom_${Date.now()}`,
           category: cat,
-          marked: false
+          marked: false,
+          pinned: false
         };
 
         fullPromptPool.unshift(newPrompt);
@@ -1279,7 +1411,11 @@
         boardPrompts = buildBoardArray(currentGridSize);
         renderBoard();
         checkBingos(true);
-        showToast('RANDOMIZED BALANCED BOARD!');
+        showToast('RANDOMIZED UNPINNED TILES!');
+      });
+
+      btnSort.addEventListener('click', () => {
+        sortBoardSymmetrically();
       });
 
       btnDefault.addEventListener('click', () => {
@@ -1292,12 +1428,12 @@
       });
 
       btnFocus.addEventListener('click', () => {
-        document.body.classList.add('focus-mode');
-        showToast('FOCUS MODE ACTIVE!');
+        document.body.classList.add('fullscreen-mode');
+        showToast('FULLSCREEN MODE ACTIVE!');
       });
 
       btnExitFocus.addEventListener('click', () => {
-        document.body.classList.remove('focus-mode');
+        document.body.classList.remove('fullscreen-mode');
       });
 
       boardSizeSelect.addEventListener('change', (e) => {
