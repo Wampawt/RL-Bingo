@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Natan & Kenan's Rocket League Bingo</title>
+  <style>
+    :root {
+      --bg-main: #030508;
+      --bg-panel: #090e18;
+      --bg-card: #0f172a;
+      --bg-card-hover: #1e293b;
+      --border-color: #1e293b;
+      --text-main: #f8fafc;
+      --text-muted: #64748b;
+      
+      /* Category Colors */
+      --color-natan: #10b981;     /* Green */
+      --color-kenan: #ef4444;     /* Red */
+      --color-team: #3b82f6;      /* Blue */
+      --color-opponents: #f97316; /* Orange */
+      --color-global: #eab308;    /* Yellow */
+      --color-free: #a855f7;      /* Purple */
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; user-select: none; }
+    html, body { height: 100vh; width: 100vw; overflow: hidden; background-color: var(--bg-main); color: var(--text-main); }
+    
+    body {
+      display: flex;
+      flex-direction: column;
+      /* Textured Stadium Turf & Carbon Mesh Overlay */
+      background-image: 
+        radial-gradient(circle at 20% 20%, rgba(59, 130, 246, 0.12) 0%, transparent 40%),
+        radial-gradient(circle at 80% 80%, rgba(16, 185, 129, 0.12) 0%, transparent 40%),
+        radial-gradient(circle at 50% 50%, rgba(168, 85, 247, 0.08) 0%, transparent 60%),
+        radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 100% 100%, 12px 12px, 32px 32px, 32px 32px;
+      background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0;
+    }
+
+    /* Screen Shake Animations for Bingos */
+    .shake-1 { animation: shake1 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+    .shake-2 { animation: shake2 0.6s cubic-bezier(.36,.07,.19,.97) both; }
+    .shake-3 { animation: shake3 0.8s cubic-bezier(.36,.07,.19,.97) both; }
+    .shake-chaos { animation: shakeChaos 1.2s infinite; }
+
+    @keyframes shake1 {
+      10%, 90% { transform: translate3d(-2px, 0, 0); }
+      30%, 70% { transform: translate3d(4px, 0, 0); }
+      50% { transform: translate3d(-4px, 0, 0); }
+    }
+    @keyframes shake2 {
+      10%, 90% { transform: translate3d(-4px, -2px, 0) rotate(-1deg); }
+      30%, 70% { transform: translate3d(6px, 4px, 0) rotate(1deg); }
+      50% { transform: translate3d(-6px, -4px, 0) rotate(-1deg); }
+    }
+    @keyframes shake3 {
+      10%, 90% { transform: translate3d(-8px, 6px, 0) rotate(-2deg); }
+      30%, 70% { transform: translate3d(10px, -8px, 0) rotate(2deg); }
+      50% { transform: translate3d(-10px, 8px, 0) rotate(-2deg); }
+    }
+    @keyframes shakeChaos {
+      0% { transform: translate(0, 0) rotate(0deg); }
+      20% { transform: translate(-12px, 12px) rotate(-3deg); }
+      40% { transform: translate(12px, -12px) rotate(3deg); }
+      60% { transform: translate(-10px, -10px) rotate(-2deg); }
+      80% { transform: translate(10px, 10px) rotate(2deg); }
+      100% { transform: translate(0, 0) rotate(0deg); }
+    }
+
+    /* Subtle Category-Color Pulse for Near-Bingo (1-Away) Fields */
+    @keyframes subtleNearBingo {
+      0%, 100% { transform: scale(1) translate(0, 0); filter: brightness(1); }
+      20% { transform: scale(1.018) translate(-0.4px, 0.4px); filter: brightness(1.25); }
+      40% { transform: scale(1.025) translate(0.4px, -0.4px); filter: brightness(1.45); }
+      60% { transform: scale(1.018) translate(-0.4px, -0.4px); filter: brightness(1.25); }
+      80% { transform: scale(1.025) translate(0.4px, 0.4px); filter: brightness(1.45); }
+    }
+
+    .bingo-field.near-bingo:not(.marked) {
+      animation: subtleNearBingo 2.8s infinite ease-in-out;
+    }
+
+    .bingo-field.cat-natan.near-bingo:not(.marked) { border-color: var(--color-natan) !important; box-shadow: 0 0 12px rgba(16, 185, 129, 0.45); }
+    .bingo-field.cat-kenan.near-bingo:not(.marked) { border-color: var(--color-kenan) !important; box-shadow: 0 0 12px rgba(239, 68, 68, 0.45); }
+    .bingo-field.cat-team.near-bingo:not(.marked) { border-color: var(--color-team) !important; box-shadow: 0 0 12px rgba(59, 130, 246, 0.45); }
+    .bingo-field.cat-opponents.near-bingo:not(.marked) { border-color: var(--color-opponents) !important; box-shadow: 0 0 12px rgba(249, 115, 22, 0.45); }
+    .bingo-field.cat-global.near-bingo:not(.marked) { border-color: var(--color-global) !important; box-shadow: 0 0 12px rgba(234, 179, 8, 0.45); }
+    .bingo-field.cat-free.near-bingo:not(.marked) { border-color: var(--color-free) !important; box-shadow: 0 0 12px rgba(168, 85, 247, 0.45); }
+
+    /* Header & Controls */
+    header {
+      flex-shrink: 0;
+      background: rgba(9, 14, 24, 0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      padding: 0.6rem 1.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .title-group h1 {
+      font-size: 1.25rem;
+      font-weight: 800;
+      background: linear-gradient(90deg, #3b82f6, #10b981);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .title-group p { font-size: 0.75rem; color: var(--text-muted); }
+    .controls { display: flex; align-items: center; gap: 0.5rem; }
+
+    select, button {
+      background: var(--bg-card);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      padding: 0.45rem 0.75rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    select:hover, button:hover { background: var(--bg-card-hover); border-color: #334155; }
+    button.btn-primary { background: #2563eb; border-color: #3b82f6; }
+    button.btn-primary:hover { background: #1d4ed8; }
+    button.btn-success { background: #059669; border-color: #10b981; }
+    button.btn-success:hover { background: #047857; }
+    button.btn-warning { background: #d97706; border-color: #f59e0b; }
+    button.btn-warning:hover { background: #b45309; }
+
+    /* Legend Bar */
+    .legend {
+      flex-shrink: 0;
+      display: flex;
+      justify-content: center;
+      gap: 1.25rem;
+      padding: 0.35rem 1rem;
+      background: rgba(6, 10, 18, 0.95);
+      border-bottom: 1px solid var(--border-color);
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .legend-item { display: flex; align-items: center; gap: 0.4rem; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+    /* Layout */
+    .app-container { flex: 1; display: flex; min-height: 0; overflow: hidden; position: relative; }
+
+    /* Collapsible Sidebar */
+    .sidebar {
+      width: 320px;
+      flex-shrink: 0;
+      background: rgba(9, 14, 24, 0.95);
+      backdrop-filter: blur(10px);
+      border-right: 1px solid var(--border-color);
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      min-height: 0;
+      transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 10;
+    }
+
+    .sidebar.collapsed { margin-left: -320px; }
+    
+    .btn-sidebar-toggle {
+      width: 100%;
+      justify-content: center;
+      background: #0f172a;
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-restore-sidebar {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      z-index: 20;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.8);
+    }
+
+    .sidebar-header h2 { font-size: 1rem; font-weight: 700; }
+
+    .filter-group { display: flex; flex-direction: column; gap: 0.4rem; }
+
+    .category-select, .prompt-search, .modal-input {
+      width: 100%;
+      padding: 0.45rem 0.75rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      color: var(--text-main);
+      font-size: 0.8rem;
+    }
+
+    .prompt-bank {
+      flex: 1;
+      overflow-y: auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      padding-right: 4px;
+    }
+
+    .prompt-bank::-webkit-scrollbar { width: 6px; }
+    .prompt-bank::-webkit-scrollbar-track { background: var(--bg-panel); }
+    .prompt-bank::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+
+    .prompt-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-left: 4px solid #64748b;
+      border-radius: 6px;
+      padding: 0.6rem 0.75rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: grab;
+      transition: transform 0.15s ease, background-color 0.15s ease;
+      word-break: break-word;
+      line-height: 1.3;
+    }
+
+    .prompt-card:hover { transform: translateX(3px); background: var(--bg-card-hover); }
+    .prompt-card:active { cursor: grabbing; }
+
+    .prompt-card.cat-natan { border-left-color: var(--color-natan); }
+    .prompt-card.cat-kenan { border-left-color: var(--color-kenan); }
+    .prompt-card.cat-team { border-left-color: var(--color-team); }
+    .prompt-card.cat-opponents { border-left-color: var(--color-opponents); }
+    .prompt-card.cat-global { border-left-color: var(--color-global); }
+
+    /* Board Area */
+    .board-container {
+      flex: 1;
+      padding: 1rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      min-height: 0;
+      min-width: 0;
+    }
+
+    .bingo-board {
+      display: grid;
+      gap: 0.5rem;
+      width: min(100%, calc(100vh - 140px));
+      height: min(100%, calc(100vh - 140px));
+      max-width: 100%;
+      max-height: 100%;
+      aspect-ratio: 1 / 1;
+    }
+
+    /* Dim Unmarked Field Styling */
+    .bingo-field {
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(8px);
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.4rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      position: relative;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+      word-break: break-word;
+      overflow: hidden;
+      white-space: pre-line;
+    }
+
+    .bingo-field.cat-natan { background: rgba(16, 185, 129, 0.07); border-color: rgba(16, 185, 129, 0.2); color: #cbd5e1; }
+    .bingo-field.cat-kenan { background: rgba(239, 68, 68, 0.07); border-color: rgba(239, 68, 68, 0.2); color: #cbd5e1; }
+    .bingo-field.cat-team { background: rgba(59, 130, 246, 0.07); border-color: rgba(59, 130, 246, 0.2); color: #cbd5e1; }
+    .bingo-field.cat-opponents { background: rgba(249, 115, 22, 0.07); border-color: rgba(249, 115, 22, 0.2); color: #cbd5e1; }
+    .bingo-field.cat-global { background: rgba(234, 179, 8, 0.07); border-color: rgba(234, 179, 8, 0.2); color: #cbd5e1; }
+    .bingo-field.cat-free { background: rgba(168, 85, 247, 0.22); border-color: rgba(168, 85, 247, 0.5); color: #ffffff; cursor: default; }
+
+    .bingo-field:hover { transform: scale(1.02); border-color: #64748b; z-index: 2; }
+    .field-text { font-weight: 700; line-height: 1.2; pointer-events: none; }
+
+    .grid-4 .field-text { font-size: calc(0.6rem + 0.3vw); }
+    .grid-5 .field-text { font-size: calc(0.52rem + 0.25vw); }
+    .grid-6 .field-text { font-size: calc(0.45rem + 0.2vw); }
+    .grid-7 .field-text { font-size: calc(0.4rem + 0.15vw); }
+
+    .reroll-btn {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      cursor: pointer;
+      z-index: 5;
+      padding: 0;
+    }
+
+    .bingo-field:hover .reroll-btn { opacity: 1; }
+    .reroll-btn:hover { transform: rotate(180deg) scale(1.1); background: rgba(0, 0, 0, 0.95); }
+    .reroll-btn svg { width: 10px; height: 10px; fill: currentColor; }
+
+    /* Marked Off Colors */
+    .bingo-field.marked { box-shadow: 0 0 20px rgba(0,0,0,0.9); font-weight: 800; }
+    .bingo-field.marked.cat-natan { background: var(--color-natan) !important; border-color: #059669 !important; color: #022c22; }
+    .bingo-field.marked.cat-kenan { background: var(--color-kenan) !important; border-color: #dc2626 !important; color: #450a0a; }
+    .bingo-field.marked.cat-team { background: var(--color-team) !important; border-color: #2563eb !important; color: #0f172a; }
+    .bingo-field.marked.cat-opponents { background: var(--color-opponents) !important; border-color: #ea580c !important; color: #431407; }
+    .bingo-field.marked.cat-global { background: var(--color-global) !important; border-color: #d97706 !important; color: #451a03; }
+    .bingo-field.marked.cat-free { background: var(--color-free) !important; border-color: #7c3aed !important; color: #ffffff; }
+
+    .bingo-field.drag-over { border: 2px dashed #3b82f6 !important; background: var(--bg-card-hover); }
+
+    /* Modal Styling */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(8px);
+      display: flex; justify-content: center; align-items: center;
+      z-index: 2000;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    .modal-overlay.active { opacity: 1; pointer-events: auto; }
+    .modal-content {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      padding: 1.5rem;
+      border-radius: 12px;
+      width: 90%; max-width: 420px;
+      display: flex; flex-direction: column; gap: 1rem;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.8);
+    }
+    .modal-content h3 { font-size: 1.1rem; color: var(--text-main); }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 0.5rem; }
+
+    /* Celebration Overlay */
+    .celebration-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      pointer-events: none;
+      z-index: 1500;
+      overflow: hidden;
+    }
+    
+    .bingo-banner {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 3.2rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      text-shadow: 0 0 20px rgba(0,0,0,0.9), 0 0 40px currentColor;
+      white-space: nowrap;
+      opacity: 0;
+    }
+
+    @keyframes popBanner {
+      0% { transform: translate(-50%, -50%) scale(0) rotate(-10deg); opacity: 0; }
+      40% { transform: translate(-50%, -50%) scale(1.2) rotate(3deg); opacity: 1; }
+      60% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; }
+      100% { transform: translate(-50%, -50%) scale(1.4) rotate(5deg); opacity: 0; }
+    }
+
+    .quick-chat-bubble {
+      position: absolute;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 0.4rem 0.8rem;
+      background: rgba(15, 23, 42, 0.9);
+      border: 2px solid currentColor;
+      border-radius: 8px;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.6);
+      white-space: nowrap;
+    }
+
+    @keyframes floatUp {
+      0% { transform: translateY(0) scale(0.8); opacity: 1; }
+      100% { transform: translateY(-350px) scale(1.3); opacity: 0; }
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 15px;
+      right: 15px;
+      background: #10b981;
+      color: #022c22;
+      padding: 0.6rem 1rem;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.85rem;
+      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s ease;
+      z-index: 1000;
+    }
+
+    .toast.show { transform: translateY(0); opacity: 1; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="title-group">
+      <h1>Rocket League Bingo</h1>
+      <p>Natan & Kenan Edition</p>
+    </div>
+
+    <div class="controls">
+      <button id="btnOpenCustomModal" class="btn-primary">➕ Custom Prompt</button>
+
+      <label for="boardSize" style="font-size: 0.8rem; color: var(--text-muted); margin-left: 0.5rem;">Size:</label>
+      <select id="boardSize">
+        <option value="4">4 x 4</option>
+        <option value="5" selected>5 x 5</option>
+        <option value="6">6 x 6</option>
+        <option value="7">7 x 7</option>
+      </select>
+
+      <button id="btnDefault" class="btn-warning">⏮ Default 5x5</button>
+      <button id="btnShuffle">🔀 Shuffle</button>
+      <button id="btnSave" class="btn-primary">💾 Save Layout</button>
+      <button id="btnResetMarks" class="btn-success">🔄 Clear Marks</button>
+    </div>
+  </header>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background: var(--color-natan);"></div> Natan (Green)</div>
+    <div class="legend-item"><div class="legend-dot" style="background: var(--color-kenan);"></div> Kenan (Red)</div>
+    <div class="legend-item"><div class="legend-dot" style="background: var(--color-team);"></div> Team Objective (Blue)</div>
+    <div class="legend-item"><div class="legend-dot" style="background: var(--color-opponents);"></div> Opponents (Orange)</div>
+    <div class="legend-item"><div class="legend-dot" style="background: var(--color-global);"></div> Global / Game (Yellow)</div>
+  </div>
+
+  <div class="app-container">
+    <button id="btnRestoreSidebar" class="btn-restore-sidebar" style="display: none;">📂 Prompts</button>
+
+    <aside id="sidebar" class="sidebar">
+      <button id="btnMinimizeSidebar" class="btn-sidebar-toggle">◀ Minimize Prompt Bank</button>
+      
+      <div class="sidebar-header">
+        <h2>Prompt Bank</h2>
+      </div>
+
+      <div class="filter-group">
+        <select id="categoryFilter" class="category-select">
+          <option value="all">All Categories</option>
+          <option value="natan">Natan (Green)</option>
+          <option value="kenan">Kenan (Red)</option>
+          <option value="team">Team (Blue)</option>
+          <option value="opponents">Opponents (Orange)</option>
+          <option value="global">Global (Yellow)</option>
+        </select>
+        <input type="text" id="promptSearch" class="prompt-search" placeholder="Search prompts...">
+      </div>
+
+      <div id="promptBank" class="prompt-bank"></div>
+    </aside>
+
+    <main class="board-container">
+      <div id="bingoBoard" class="bingo-board grid-5"></div>
+    </main>
+  </div>
+
+  <div id="customModal" class="modal-overlay">
+    <div class="modal-content">
+      <h3>Add Custom Prompt</h3>
+      <input type="text" id="customText" class="modal-input" placeholder="Type prompt requirement...">
+      <select id="customCat" class="modal-input">
+        <option value="natan">Natan (Green)</option>
+        <option value="kenan">Kenan (Red)</option>
+        <option value="team">Team Objective (Blue)</option>
+        <option value="opponents">Opponents (Orange)</option>
+        <option value="global">Global / Game (Yellow)</option>
+      </select>
+      <div class="modal-actions">
+        <button id="btnCancelCustom">Cancel</button>
+        <button id="btnAddCustomConfirm" class="btn-primary">Add Prompt</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="celebrationOverlay" class="celebration-overlay"></div>
+  <div id="toast" class="toast">Layout saved successfully!</div>
+
+  <script>
+    const defaultImageLayout = [
+      { text: "Kenan passes into the enemy\n(must end in goal)", family: "pass_enemy", category: "kenan", marked: false },
+      { text: "Natan (air) dribble bump", family: "dribble_bump", category: "natan", marked: false },
+      { text: "Team Passing Play\n(requires at least a pass and a pass back)", family: "team_pass", category: "team", marked: false },
+      { text: "Kenan owngoal", family: "owngoal", category: "kenan", marked: false },
+      { text: "Natan redirects in goal", family: "redirect", category: "natan", marked: false },
+      
+      { text: "Natan Double Tap", family: "double_tap", category: "natan", marked: false },
+      { text: "Rule 1", family: "rule1", category: "global", marked: false },
+      { text: "Kenan misspells HARD in chat", family: "misspell", category: "kenan", marked: false },
+      { text: "Opponent whiffs open net", family: "opp_whiff", category: "opponents", marked: false },
+      { text: "Kenan whiffs an open net", family: "open_net_whiff", category: "kenan", marked: false },
+      
+      { text: "Backflip whiff a save", family: "backflip_save", category: "global", marked: false },
+      { text: "Kenan fakes opponent", family: "fake", category: "kenan", marked: false },
+      { text: "FREE", family: "free", category: "free", marked: true },
+      { text: "Natan whiffs a flick entirely", family: "flick_whiff", category: "natan", marked: false },
+      { text: "Team Pinch\n(must go in)", family: "team_pinch", category: "team", marked: false },
+      
+      { text: "Natan whiffs an open net", family: "open_net_whiff", category: "natan", marked: false },
+      { text: "Opponent owngoals", family: "opp_owngoal", category: "opponents", marked: false },
+      { text: "Natan misses on kickoff", family: "kickoff_miss", category: "natan", marked: false },
+      { text: "Opponents bump each other away from a save", family: "opp_bump_save", category: "opponents", marked: false },
+      { text: "Kenan Double Tap", family: "double_tap", category: "kenan", marked: false },
+      
+      { text: "Kenan demoes for Natans goal", family: "demo_goal", category: "team", marked: false },
+      { text: "Natan fakes opponent", family: "fake", category: "natan", marked: false },
+      { text: "Pool Goal / Bump Goal", family: "pool_goal", category: "global", marked: false },
+      { text: "Kenan 0 boost play into GOAL", family: "zero_boost", category: "kenan", marked: false },
+      { text: "Natan owngoal", family: "owngoal", category: "natan", marked: false }
+    ];
+
+    const rawBoth = [
+      ["pass_enemy", "passes into the enemy (must end in goal)"],
+      ["dribble_bump", "(air) dribble bump"],
+      ["owngoal", "owngoal accidentally"],
+      ["redirect", "redirects in goal"],
+      ["double_tap", "Double Tap"],
+      ["misspell", "misspells HARD in chat"],
+      ["open_net_whiff", "whiffs an open net"],
+      ["flick_whiff", "whiffs a flick entirely"],
+      ["fake", "fakes opponent"],
+      ["kickoff_miss", "misses on kickoff"],
+      ["zero_boost", "0 boost play into GOAL"],
+      ["steal_goal", "steals teammate's goal at 0.1s"],
+      ["ceiling_shot", "ceiling shot goal"],
+      ["flip_reset", "flip reset goal"],
+      ["musty_fail", "fails a Musty flick"],
+      ["pinch_attempt", "attempts a wall pinch and whiffs"],
+      ["demo_whiff", "tries to demo and misses completely"],
+      ["boost_steal", "steals all corner boost from teammate"],
+      ["pinch_save", "accidental team pinch save"],
+      ["half_flip_fail", "messes up a half flip"],
+      ["aerial_whiff", "whiffs a high aerial"],
+      ["hat_trick", "gets a hat trick"],
+      ["savior", "gets a savior medal"],
+      ["backflip_whiff", "backflip whiffs a save"],
+      ["dunked", "gets dunked on"],
+      ["turtle_shot", "attempts a turtle shot"],
+      ["psycho_goal", "scores a psycho goal"],
+      ["bumps_mate", "bumps teammate out of position"],
+      ["prejump_fail", "prejumps and misses by a mile"],
+      ["shadow_fail", "fails shadowing and gets scored on"],
+      ["crossbar_double", "hits the crossbar twice in one game"],
+      ["demoed_thrice", "gets demoed 3 times in one game"],
+      ["pinch_accidental", "scores an accidental pinch goal"],
+      ["ot_miss", "misses an easy save in Overtime"],
+      ["playmaker", "gets a playmaking assist"],
+      ["ground_pinch", "tries a ground pinch and fails"],
+      ["jumps_over", "jumps over the ball on defense"],
+      ["kickoff_direct", "scores a kickoff goal directly"],
+      ["misrotate", "misrotates and gets scored on"],
+      ["bumped_in_net", "gets bumped into the opponent net"],
+      ["low_boost_score", "scores with less than 10 boost"],
+      ["slow_roll_miss", "misses a slow rolling ball"],
+      ["goal_line_save", "gets a goal line save"],
+      ["double_commit_ko", "double commits on kickoff"],
+      ["wall_drive_fall", "drives up the wall and falls off"],
+      ["wavedash_trip", "tries a wave dash and trips car"],
+      ["midair_demo", "gets demoed while in mid-air"],
+      ["corner_clear_miss", "misses a clear ball from corner"],
+      ["aerial_goal", "scores an aerial goal"],
+      ["dunk_goal", "scores a dunk goal"],
+      ["wall_jump_miss", "jumps off wall and misses ball"],
+      ["dribble_lose", "tries to dribble and loses control"],
+      ["upside_down_score", "scores with an upside-down car"],
+      ["opponent_save_bump", "accidentally bumps opponent into saving"],
+      ["enemy_assist", "gets credited with assist on enemy goal"],
+      ["aerial_pinch", "aerial pinch attempt that hits backboard"],
+      ["pogo_attempt", "attempts a pogo bounce and misses"],
+      ["speedflip_fail", "fails a speedflip on kickoff"],
+      ["boost_over_ball", "loves boost over ball (corner full boost instead of save)"],
+      ["backboard_double", "scores a backboard double tap"],
+      ["wall_pinch_goal", "scores off a wall pinch"],
+      ["zero_sec_clutch", "saves a goal-line 0-second shot"],
+      ["5050_win", "wins a 50/50 that goes straight into goal"]
+    ];
+
+    const rawTeam = [
+      ["team_pass", "Team Passing Play (pass, pass back, goal)"],
+      ["team_pinch", "Team Pinch Goal"],
+      ["double_commit", "Both commit to same ball & get scored on"],
+      ["double_whiff", "Both whiff the exact same ball"],
+      ["buzzer_beater", "Zero-second buzzer beater goal"],
+      ["ot_low_boost", "Win OT with <50 boost combined"],
+      ["same_enemy_fake", "Both get faked by same enemy in one play"],
+      ["blowout_win", "Win game by 5+ goals"],
+      ["demo_goal", "Demo for teammate's goal"],
+      ["double_demoed", "Both get demoed at the exact same time"],
+      ["clean_rotation", "Clean rotation goal with zero double commits"],
+      ["midair_team_bump", "Both bump each other in mid-air"],
+      ["shutout_win", "Shutout win (0 goals conceded)"],
+      ["three_pass_possession", "Perform 3 successful passes in one possession"],
+      ["both_miss_ko", "Both miss the same kickoff"],
+      ["force_ot", "Force Overtime with under 5 seconds left"],
+      ["epic_comeback", "Epic comeback from 3 goals down"],
+      ["equal_points", "Both have equal points at end of game"],
+      ["triple_pass_open", "Triple pass goal into open net"],
+      ["high_low_five", "High-five or Low-five after goal"],
+      ["ten_saves_combined", "Combined 10+ saves in one game"],
+      ["both_hit_post", "Both hit the post in the same match"],
+      ["low_boost_match", "Both spend entire match under 50 boost"],
+      ["zero_team_bumps", "Complete a game with zero team bumps"],
+      ["fast_ot_win", "Win OT in under 10 seconds"]
+    ];
+
+    const rawOpponents = [
+      ["opp_whiff", "Opponent whiffs open net"],
+      ["opp_bump_save", "Opponents bump each other away from a save"],
+      ["opp_owngoal", "Opponent owngoals"],
+      ["opp_ff", "Opponents forfeit before 3:00"],
+      ["opp_rage_quit", "Opponent rage quits mid-play"],
+      ["opp_meme_car", "Opponent is Scarab or Battle Bus"],
+      ["opp_aerial_whiff", "Opponent aerial whiff turns into goal"],
+      ["opp_demo_chase", "Opponent tries to demo all game and loses"],
+      ["opp_double_open", "Opponent double commits on open net"],
+      ["opp_stationary_miss", "Opponent misses a completely stationary ball"],
+      ["opp_freestyle_fail", "Opponent tries freestyle and whiffs completely"],
+      ["opp_zero_points", "Opponent gets 0 points in first 2 minutes"],
+      ["opp_ko_owngoal", "Opponent owngoals on kickoff"],
+      ["opp_double_boost_ko", "Opponents both go for boost on kickoff"],
+      ["opp_clear_whiff", "Opponent whiffs a clear and gives free goal"],
+      ["opp_break_rule1", "Opponent tries rule 1 and breaks it"],
+      ["opp_five_demos", "Opponent gets demoed 5 times in one match"],
+      ["opp_pinch_owngoal", "Opponent pinches ball into their own net"],
+      ["opp_dribble_fumble", "Opponent fumbles dribble right in front of net"],
+      ["opp_kickoff_whiff", "Opponent whiffs kickoff completely"],
+      ["opp_bump_mate", "Opponent bumps their own teammate off a save"],
+      ["opp_crossbar_save", "Opponent saves ball off their own crossbar"],
+      ["opp_epic_whiff", "Opponent whiffs goal line save"],
+      ["opp_post_dunk", "Opponent gets dunked into their own post"],
+      ["opp_ot_miss", "Opponent misses open net in Overtime"]
+    ];
+
+    const rawGlobal = [
+      ["rule1", "Rule 1"],
+      ["backflip_save", "Backflip whiff a save"],
+      ["pool_goal", "Pool Goal / Bump Goal"],
+      ["musty_fail", "Musty flick fail"],
+      ["turtle_goal", "Turtle goal"],
+      ["upside_down_goal", "Score a goal while upside down"],
+      ["triple_post", "Post hit 3 times in a single game"],
+      ["goal_line_stop", "Ball stops on goal line without going in"],
+      ["long_ot", "Game goes to 3+ minute Overtime"],
+      ["kuxir_attempt", "Kuxir pinch goal attempt"],
+      ["one_zero_match", "Match ends 1-0 in regulation"],
+      ["zero_sec_goal", "Goal scored at exactly 0:00 on timer"],
+      ["full_field_demo", "Demo goal scored from full field away"],
+      ["crossbar_bounce_thrice", "Ball bounces on crossbar 3 times in one attack"],
+      ["zero_zero_one_min", "Both teams have 0 goals at 1:00 mark"],
+      ["ot_owngoal_decider", "Overtime decided by an owngoal"],
+      ["fast_goal_speed", "Goal scored at over 110 km/h (68 mph)"],
+      ["slow_goal_speed", "Goal scored under 30 km/h (18 mph)"],
+      ["stuck_in_net", "Car gets stuck inside net geometry"],
+      ["epic_save_counter", "Epic save leads directly to counter-goal"],
+      ["line_roll_untouched", "Ball rolls across entire goal line untouched"],
+      ["bounce_goal_line", "Ball bounces off goal line and stays out"],
+      ["double_save_play", "Two saves made in under 3 seconds"],
+      ["backboard_rebound", "Goal scored off a direct backboard rebound"],
+      ["quick_ot_winner", "Overtime goal in under 15 seconds"]
+    ];
+
+    function expandMasterPool() {
+      const pool = [];
+      rawBoth.forEach(([fam, text]) => {
+        pool.push({ text: `Natan ${text}`, family: fam, category: "natan", marked: false });
+        pool.push({ text: `Kenan ${text}`, family: fam, category: "kenan", marked: false });
+      });
+      rawTeam.forEach(([fam, text]) => {
+        pool.push({ text: text, family: fam, category: "team", marked: false });
+      });
+      rawOpponents.forEach(([fam, text]) => {
+        pool.push({ text: text, family: fam, category: "opponents", marked: false });
+      });
+      rawGlobal.forEach(([fam, text]) => {
+        pool.push({ text: text, family: fam, category: "global", marked: false });
+      });
+      return pool;
+    }
+
+    let fullPromptPool = expandMasterPool();
+
+    let currentGridSize = 5;
+    let boardPrompts = [];
+    let lastBingoCount = 0;
+
+    const boardEl = document.getElementById('bingoBoard');
+    const boardSizeSelect = document.getElementById('boardSize');
+    const promptBankEl = document.getElementById('promptBank');
+    const promptSearchInput = document.getElementById('promptSearch');
+    const categoryFilterSelect = document.getElementById('categoryFilter');
+    const sidebarEl = document.getElementById('sidebar');
+    const btnMinimizeSidebar = document.getElementById('btnMinimizeSidebar');
+    const btnRestoreSidebar = document.getElementById('btnRestoreSidebar');
+    const btnOpenCustomModal = document.getElementById('btnOpenCustomModal');
+    const btnCancelCustom = document.getElementById('btnCancelCustom');
+    const btnAddCustomConfirm = document.getElementById('btnAddCustomConfirm');
+    const customModal = document.getElementById('customModal');
+    const customText = document.getElementById('customText');
+    const customCat = document.getElementById('customCat');
+    const btnDefault = document.getElementById('btnDefault');
+    const btnShuffle = document.getElementById('btnShuffle');
+    const btnSave = document.getElementById('btnSave');
+    const btnResetMarks = document.getElementById('btnResetMarks');
+    const toastEl = document.getElementById('toast');
+    const celebrationOverlay = document.getElementById('celebrationOverlay');
+
+    const quickChats = ["WHAT A SAVE!", "CALCULATED!", "THIS IS ROCKET LEAGUE!", "SAVAGE!", "NO WAY!", "SICK!", "WOW!", "HOLY COW!", "UNBELIEVABLE!", "DOUBLE BINGO!"];
+
+    function getCategory(item) {
+      if (item.category) return item.category;
+      const lower = item.text.toLowerCase();
+      if (lower.includes('free')) return 'free';
+      if (lower.includes('natan')) return 'natan';
+      if (lower.includes('kenan')) return 'kenan';
+      if (lower.includes('team') || lower.includes('both')) return 'team';
+      if (lower.includes('opponent')) return 'opponents';
+      return 'global';
+    }
+
+    function isCenterCell(index, size) {
+      if (size % 2 === 0) return false;
+      return index === Math.floor((size * size) / 2);
+    }
+
+    function init() {
+      loadSavedLayout();
+      renderSidebar();
+      renderBoard();
+      setupEventListeners();
+      checkBingos(true);
+    }
+
+    function renderSidebar() {
+      promptBankEl.innerHTML = '';
+      const textFilter = promptSearchInput.value.toLowerCase();
+      const catFilter = categoryFilterSelect.value;
+
+      const filtered = fullPromptPool.filter(p => {
+        const matchesText = p.text.toLowerCase().includes(textFilter);
+        const matchesCat = (catFilter === 'all') || (p.category === catFilter);
+        return matchesText && matchesCat;
+      });
+
+      filtered.forEach((prompt) => {
+        const card = document.createElement('div');
+        const cat = getCategory(prompt);
+        card.className = `prompt-card cat-${cat}`;
+        card.draggable = true;
+        card.innerText = prompt.text;
+
+        card.addEventListener('dragstart', (e) => {
+          e.dataTransfer.setData('text/plain', JSON.stringify({
+            source: 'sidebar',
+            prompt: { ...prompt, marked: false }
+          }));
+        });
+
+        promptBankEl.appendChild(card);
+      });
+    }
+
+    function buildBoardArray(size) {
+      const totalCells = size * size;
+      const centerIdx = size % 2 !== 0 ? Math.floor(totalCells / 2) : -1;
+      let prompts = [];
+      let usedFamilies = new Set();
+
+      let poolCopy = fullPromptPool.filter(p => p.category !== 'free');
+
+      for (let i = 0; i < totalCells; i++) {
+        if (i === centerIdx) {
+          prompts.push({ text: "FREE", family: "free", category: "free", marked: true });
+        } else {
+          let available = poolCopy.filter(p => !usedFamilies.has(p.family));
+          if (available.length === 0) {
+            usedFamilies.clear();
+            available = poolCopy;
+          }
+          const randomIndex = Math.floor(Math.random() * available.length);
+          const chosen = available[randomIndex];
+          usedFamilies.add(chosen.family);
+          prompts.push({ ...chosen, marked: false });
+        }
+      }
+      return prompts;
+    }
+
+    function getNearBingoIndices() {
+      const N = currentGridSize;
+      const nearIndices = new Set();
+
+      for (let r = 0; r < N; r++) {
+        let unmarkedIdx = -1;
+        let markedCount = 0;
+        for (let c = 0; c < N; c++) {
+          const idx = r * N + c;
+          if (boardPrompts[idx].marked) markedCount++;
+          else unmarkedIdx = idx;
+        }
+        if (markedCount === N - 1 && unmarkedIdx !== -1) nearIndices.add(unmarkedIdx);
+      }
+
+      for (let c = 0; c < N; c++) {
+        let unmarkedIdx = -1;
+        let markedCount = 0;
+        for (let r = 0; r < N; r++) {
+          const idx = r * N + c;
+          if (boardPrompts[idx].marked) markedCount++;
+          else unmarkedIdx = idx;
+        }
+        if (markedCount === N - 1 && unmarkedIdx !== -1) nearIndices.add(unmarkedIdx);
+      }
+
+      let unmarkedIdxD1 = -1;
+      let markedCountD1 = 0;
+      for (let i = 0; i < N; i++) {
+        const idx = i * N + i;
+        if (boardPrompts[idx].marked) markedCountD1++;
+        else unmarkedIdxD1 = idx;
+      }
+      if (markedCountD1 === N - 1 && unmarkedIdxD1 !== -1) nearIndices.add(unmarkedIdxD1);
+
+      let unmarkedIdxD2 = -1;
+      let markedCountD2 = 0;
+      for (let i = 0; i < N; i++) {
+        const idx = i * N + (N - 1 - i);
+        if (boardPrompts[idx].marked) markedCountD2++;
+        else unmarkedIdxD2 = idx;
+      }
+      if (markedCountD2 === N - 1 && unmarkedIdxD2 !== -1) nearIndices.add(unmarkedIdxD2);
+
+      return nearIndices;
+    }
+
+    function renderBoard() {
+      const nearBingoIndices = getNearBingoIndices();
+
+      boardEl.className = `bingo-board grid-${currentGridSize}`;
+      boardEl.style.gridTemplateColumns = `repeat(${currentGridSize}, 1fr)`;
+      boardEl.innerHTML = '';
+
+      boardPrompts.forEach((prompt, index) => {
+        const isFreeCenter = isCenterCell(index, currentGridSize) || prompt.category === 'free';
+        if (isFreeCenter) prompt.marked = true;
+
+        const cat = isFreeCenter ? 'free' : getCategory(prompt);
+        const field = document.createElement('div');
+        field.className = `bingo-field cat-${cat}`;
+        if (prompt.marked) field.classList.add('marked');
+        if (!prompt.marked && nearBingoIndices.has(index)) field.classList.add('near-bingo');
+        field.dataset.index = index;
+
+        const textSpan = document.createElement('span');
+        textSpan.className = 'field-text';
+        textSpan.innerText = prompt.text;
+        field.appendChild(textSpan);
+
+        if (!isFreeCenter) {
+          const rerollBtn = document.createElement('button');
+          rerollBtn.className = 'reroll-btn';
+          rerollBtn.title = 'Reroll Requirement';
+          rerollBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>`;
+          
+          rerollBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            rerollField(index);
+          });
+          field.appendChild(rerollBtn);
+        }
+
+        field.addEventListener('click', () => {
+          if (isFreeCenter) return;
+          prompt.marked = !prompt.marked;
+          renderBoard();
+          checkBingos();
+        });
+
+        if (!isFreeCenter) {
+          field.draggable = true;
+          field.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', JSON.stringify({
+              source: 'board',
+              index: index,
+              prompt: prompt
+            }));
+          });
+        }
+
+        field.addEventListener('dragover', (e) => {
+          if (isFreeCenter) return;
+          e.preventDefault();
+          field.classList.add('drag-over');
+        });
+
+        field.addEventListener('dragleave', () => {
+          field.classList.remove('drag-over');
+        });
+
+        field.addEventListener('drop', (e) => {
+          e.preventDefault();
+          field.classList.remove('drag-over');
+          if (isFreeCenter) return;
+
+          const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+          if (data.prompt && data.prompt.category === 'free') return;
+
+          if (data.source === 'sidebar') {
+            boardPrompts[index] = { ...data.prompt, marked: false };
+          } else if (data.source === 'board') {
+            const targetIndex = index;
+            const sourceIndex = data.index;
+            if (isCenterCell(sourceIndex, currentGridSize)) return;
+
+            const temp = boardPrompts[targetIndex];
+            boardPrompts[targetIndex] = boardPrompts[sourceIndex];
+            boardPrompts[sourceIndex] = temp;
+          }
+          renderBoard();
+          checkBingos();
+        });
+
+        boardEl.appendChild(field);
+      });
+    }
+
+    function checkBingos(silent = false) {
+      const N = currentGridSize;
+      let activeBingos = 0;
+
+      for (let r = 0; r < N; r++) {
+        let complete = true;
+        for (let c = 0; c < N; c++) {
+          if (!boardPrompts[r * N + c].marked) { complete = false; break; }
+        }
+        if (complete) activeBingos++;
+      }
+
+      for (let c = 0; c < N; c++) {
+        let complete = true;
+        for (let r = 0; r < N; r++) {
+          if (!boardPrompts[r * N + c].marked) { complete = false; break; }
+        }
+        if (complete) activeBingos++;
+      }
+
+      let d1 = true;
+      for (let i = 0; i < N; i++) {
+        if (!boardPrompts[i * N + i].marked) { d1 = false; break; }
+      }
+      if (d1) activeBingos++;
+
+      let d2 = true;
+      for (let i = 0; i < N; i++) {
+        if (!boardPrompts[i * N + (N - 1 - i)].marked) { d2 = false; break; }
+      }
+      if (d2) activeBingos++;
+
+      if (!silent && activeBingos > lastBingoCount) {
+        const newBingos = activeBingos - lastBingoCount;
+        if (newBingos >= 2) {
+          triggerMultiBingoCelebration(newBingos, activeBingos);
+        } else {
+          triggerCelebration(activeBingos);
+        }
+      }
+      lastBingoCount = activeBingos;
+    }
+
+    function triggerCelebration(count) {
+      const body = document.body;
+      celebrationOverlay.innerHTML = '';
+
+      body.classList.remove('shake-1', 'shake-2', 'shake-3', 'shake-chaos');
+      void body.offsetWidth;
+      
+      if (count === 1) body.classList.add('shake-1');
+      else if (count === 2) body.classList.add('shake-2');
+      else if (count === 3) body.classList.add('shake-3');
+      else body.classList.add('shake-chaos');
+
+      setTimeout(() => body.classList.remove('shake-1', 'shake-2', 'shake-3', 'shake-chaos'), 1500);
+
+      const banner = document.createElement('div');
+      banner.className = 'bingo-banner';
+
+      if (count === 1) {
+        banner.innerText = "⚽ BINGO #1! WHAT A SAVE! ⚽";
+        banner.style.color = "var(--color-natan)";
+      } else if (count === 2) {
+        banner.innerText = "🔥 BINGO #2! CALCULATED! 🔥";
+        banner.style.color = "var(--color-team)";
+      } else if (count === 3) {
+        banner.innerText = "⚡ BINGO #3! THIS IS ROCKET LEAGUE! ⚡";
+        banner.style.color = "var(--color-global)";
+      } else {
+        banner.innerText = `🚨 BINGO #${count}! UNSTOPPABLE CHAOS! 🚨`;
+        banner.style.color = "var(--color-kenan)";
+      }
+
+      banner.style.animation = "popBanner 2.2s ease-out forwards";
+      celebrationOverlay.appendChild(banner);
+
+      spawnQuickChats(Math.min(count * 6, 30), count);
+    }
+
+    function triggerMultiBingoCelebration(newCount, totalCount) {
+      const body = document.body;
+      celebrationOverlay.innerHTML = '';
+
+      body.classList.remove('shake-1', 'shake-2', 'shake-3', 'shake-chaos');
+      void body.offsetWidth;
+      body.classList.add('shake-chaos');
+
+      setTimeout(() => body.classList.remove('shake-chaos'), 2000);
+
+      const banner = document.createElement('div');
+      banner.className = 'bingo-banner';
+
+      if (newCount === 2) {
+        banner.innerText = `💥 DOUBLE BINGO COMBO! (${totalCount} TOTAL) 💥`;
+        banner.style.color = "var(--color-free)";
+      } else if (newCount === 3) {
+        banner.innerText = `⚡ TRIPLE BINGO MULTI-KILL! (${totalCount} TOTAL) ⚡`;
+        banner.style.color = "var(--color-kenan)";
+      } else {
+        banner.innerText = `🚨 newCountxMULTI-BINGOOVERKILL!({totalCount} TOTAL) 🚨`;
+        banner.style.color = "var(--color-opponents)";
+      }
+
+      banner.style.animation = "popBanner 2.5s ease-out forwards";
+      celebrationOverlay.appendChild(banner);
+
+      spawnQuickChats(45, 5);
+    }
+
+    function spawnQuickChats(chatCount, level) {
+      for (let i = 0; i < chatCount; i++) {
+        setTimeout(() => {
+          const chat = document.createElement('div');
+          chat.className = 'quick-chat-bubble';
+          chat.innerText = quickChats[Math.floor(Math.random() * quickChats.length)];
+          chat.style.left = `${Math.random() * 80 + 10}vw`;
+          chat.style.bottom = '10vh';
+          chat.style.color = `hsl(${Math.random() * 360}, 100%, 65%)`;
+          chat.style.fontSize = `${1.2 + level * 0.25}rem`;
+          chat.style.animation = `floatUp ${1.5 + Math.random()}s ease-out forwards`;
+          celebrationOverlay.appendChild(chat);
+
+          setTimeout(() => chat.remove(), 2500);
+        }, i * 50);
+      }
+    }
+
+    function rerollField(index) {
+      if (isCenterCell(index, currentGridSize) || boardPrompts[index].category === 'free') return;
+
+      const currentFamilies = new Set(boardPrompts.map(p => p.family));
+      const available = fullPromptPool.filter(p => p.category !== 'free' && !currentFamilies.has(p.family));
+      
+      const newPrompt = available.length > 0 
+        ? available[Math.floor(Math.random() * available.length)]
+        : fullPromptPool.filter(p => p.category !== 'free')[Math.floor(Math.random() * fullPromptPool.length)];
+
+      boardPrompts[index] = { ...newPrompt, marked: false };
+      renderBoard();
+      checkBingos();
+    }
+
+    function shuffleBoard() {
+      const centerIdx = currentGridSize % 2 !== 0 ? Math.floor((currentGridSize * currentGridSize) / 2) : -1;
+      let eligibleIndices = [];
+      for (let i = 0; i < boardPrompts.length; i++) {
+        if (i !== centerIdx && boardPrompts[i].category !== 'free') {
+          eligibleIndices.push(i);
+        }
+      }
+
+      for (let i = eligibleIndices.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const idxA = eligibleIndices[i];
+        const idxB = eligibleIndices[j];
+        [boardPrompts[idxA], boardPrompts[idxB]] = [boardPrompts[idxB], boardPrompts[idxA]];
+      }
+      renderBoard();
+      checkBingos();
+    }
+
+    function saveLayout() {
+      const cleanPrompts = boardPrompts.map((p, idx) => {
+        const isFree = isCenterCell(idx, currentGridSize) || p.category === 'free';
+        return { ...p, marked: isFree };
+      });
+
+      const payload = { gridSize: currentGridSize, prompts: cleanPrompts };
+      localStorage.setItem('rl_bingo_layout', JSON.stringify(payload));
+      showToast('LAYOUT SAVED!');
+    }
+
+    function loadSavedLayout() {
+      const saved = localStorage.getItem('rl_bingo_layout');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          currentGridSize = parsed.gridSize || 5;
+          boardSizeSelect.value = currentGridSize;
+          boardPrompts = parsed.prompts.map((p, idx) => ({
+            ...p,
+            marked: isCenterCell(idx, currentGridSize) || p.category === 'free'
+          }));
+          return;
+        } catch(e) {
+          console.error("Failed to parse saved layout", e);
+        }
+      }
+      currentGridSize = 5;
+      boardSizeSelect.value = 5;
+      boardPrompts = defaultImageLayout.map(p => ({ ...p }));
+    }
+
+    function showToast(msg) {
+      toastEl.innerText = msg;
+      toastEl.classList.add('show');
+      setTimeout(() => { toastEl.classList.remove('show'); }, 2500);
+    }
+
+    function setupEventListeners() {
+      btnMinimizeSidebar.addEventListener('click', () => {
+        sidebarEl.classList.add('collapsed');
+        btnRestoreSidebar.style.display = 'inline-flex';
+      });
+
+      btnRestoreSidebar.addEventListener('click', () => {
+        sidebarEl.classList.remove('collapsed');
+        btnRestoreSidebar.style.display = 'none';
+      });
+
+      btnOpenCustomModal.addEventListener('click', () => {
+        customText.value = '';
+        customModal.classList.add('active');
+      });
+
+      btnCancelCustom.addEventListener('click', () => {
+        customModal.classList.remove('active');
+      });
+
+      btnAddCustomConfirm.addEventListener('click', () => {
+        const text = customText.value.trim();
+        const cat = customCat.value;
+        if (!text) return;
+
+        const newPrompt = {
+          text: text,
+          family: `custom_${Date.now()}`,
+          category: cat,
+          marked: false
+        };
+
+        fullPromptPool.unshift(newPrompt);
+        renderSidebar();
+        customModal.classList.remove('active');
+        showToast('CUSTOM PROMPT ADDED!');
+      });
+
+      btnDefault.addEventListener('click', () => {
+        currentGridSize = 5;
+        boardSizeSelect.value = 5;
+        boardPrompts = defaultImageLayout.map(p => ({ ...p }));
+        renderBoard();
+        checkBingos(true);
+        showToast('RESET TO DEFAULT 5x5 BOARD!');
+      });
+
+      boardSizeSelect.addEventListener('change', (e) => {
+        currentGridSize = parseInt(e.target.value);
+        boardPrompts = buildBoardArray(currentGridSize);
+        renderBoard();
+        checkBingos(true);
+      });
+
+      btnShuffle.addEventListener('click', shuffleBoard);
+      btnSave.addEventListener('click', saveLayout);
+      btnResetMarks.addEventListener('click', () => {
+        boardPrompts.forEach((p, idx) => {
+          if (!isCenterCell(idx, currentGridSize) && p.category !== 'free') {
+            p.marked = false;
+          }
+        });
+        renderBoard();
+        checkBingos(true);
+      });
+
+      promptSearchInput.addEventListener('input', renderSidebar);
+      categoryFilterSelect.addEventListener('change', renderSidebar);
+    }
+
+    init();
+  </script>
+</body>
+</html>
+
+
